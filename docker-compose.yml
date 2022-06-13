@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+    web:
+        container_name: web
+        build:
+          context: ./server_settings/web
+        depends_on:
+          - app
+        restart: always
+        ports:
+          - "80:80"
+          - "443:443"
+        volumes:
+          - ./server_volumes/ssl/certs/:/etc/pki/tls/certs/:ro
+          - ./server_volumes/ssl/private/:/etc/pki/tls/private/:ro
+          - ./server_volumes/gunicorn_socket:/tmp/gunicorn_socket
+
+    app:
+        container_name: app
+        build:
+          context: ./
+          dockerfile: ./server_settings/app/Dockerfile
+        depends_on:
+          - db
+        restart: always
+        volumes:
+          - ./app:/var/app
+          - ./server_volumes/gunicorn_socket:/tmp/gunicorn_socket
+
+    db:
+      container_name: db
+      build:
+        context: ./server_settings/db
+      volumes:
+        - ./server_volumes/initdb.d:/docker-entrypoint-initdb.d
+      environment:
+        - MYSQL_ROOT_PASSWORD root
+        - MYSQL_DATABASE database
+        - MYSQL_USER user
+        - MYSQL_PASSWORD password
+
+    redis:
+      container_name: redis
+      build:
+        context: ./server_settings/redis
