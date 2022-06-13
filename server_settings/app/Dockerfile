@@ -9,5 +9,5 @@ RUN mkdir -p /var/tools
 COPY ../../requirements.txt /var/tools
 RUN pip install -r /var/tools/requirements.txt
 
-WORKDIR /var/app
-CMD ["/usr/local/bin/uvicorn", "app:app", "--uds", "/tmp/gunicorn_socket/gunicorn_fast_api.sock", "--reload"]
+WORKDIR /var/app/
+CMD ["/usr/local/bin/uvicorn", "src.main:app", "--uds", "/tmp/gunicorn_socket/gunicorn_fast_api.sock", "--reload"]
