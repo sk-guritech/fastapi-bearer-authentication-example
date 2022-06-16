@@ -37,7 +37,7 @@ class RequiredColumnsNotDefined(Exception):
     """Occured when required columns are not defined."""
 
 
-class AuthenticatedUser(object):
+class AuthenticatedUser:
     """Basic user model for using SimpleAuthenticateAPI."""
     ulid = Column(String(26), primary_key=True)
     bcrypt_hash = Column(String(60), nullable=False)
@@ -109,12 +109,12 @@ class SimpleAuthenticateAPI:
         '''Set user model for using authentication APIs.
 
         Args:
-            user_model (AuthenticatedUser): The user model that own neccessary columns. 
+            user_model (AuthenticatedUser): The user model that own neccessary columns.
 
         Raises:
             RequiredColumnsNotDefined: Occured when the user model don't own neccessary columns.
-        '''        
-        
+        '''
+
         if set(dir(AuthenticatedUser)) <= set(dir(user_model)):
             cls._user_model = user_model
         else:
