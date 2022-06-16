@@ -7,6 +7,6 @@ from src.router.authenticate_api import AuthenticatedUser
 Base = declarative_base()
 
 
-class User(AuthenticatedUser, Base):
+class User(AuthenticatedUser, Base):  # type: ignore
     __tablename__ = 'users'
     email_address = Column(String(255), nullable=False)
