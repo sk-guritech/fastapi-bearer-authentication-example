@@ -1,41 +1,51 @@
-from datetime import datetime, timedelta
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from datetime import timedelta
 from re import A
 from typing import Type
-import uuid
 
-from fastapi import Depends, status, HTTPException
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-
+from fastapi import Depends
+from fastapi import HTTPException
+from fastapi import status
+from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_utils.cbv import cbv
 from fastapi_utils.inferring_router import InferringRouter
-
+from jose import jwt
 from passlib.hash import bcrypt
-
 from redis import Redis
-
 from sqlalchemy import String
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import Column
-
 from src import redis_session
-
-from jose import jwt
 
 
 _api_router = InferringRouter()
 
-class DatabaseSessionMakerNotSet(Exception): """Occured when session_maker is not set"""
-class RedisSessionNotSet(Exception): """Occured when redis_session is not set."""
-class RequiredColumnsNotDefined(Exception): """Occured when required columns are not defined."""
 
-class AuthenticatedUser(object):
+class DatabaseSessionMakerNotSet(Exception):
+    """Occured when session_maker is not set"""
+
+
+class RedisSessionNotSet(Exception):
+    """Occured when redis_session is not set."""
+
+
+class RequiredColumnsNotDefined(Exception):
+    """Occured when required columns are not defined."""
+
+
+class AuthenticatedUser:
     ulid = Column(String(26), primary_key=True)
     bcrypt_hash = Column(String(60), nullable=False)
     name = Column(String(255), nullable=False)
 
+
 @cbv(_api_router)
-class SimpleAuthenticateAPI(object):
+class SimpleAuthenticateAPI:
     '''Provides APIs for authentication.
 
     Attributes:
@@ -51,7 +61,7 @@ class SimpleAuthenticateAPI(object):
 
     Examples:
         Add APIs for authentication to FastAPI
-        
+
         >>> from fastapi import FastAPI
         >>> from sqlalchemy.orm import sessionmaker
         >>> from sqlalchemy import create_engine
@@ -65,42 +75,42 @@ class SimpleAuthenticateAPI(object):
         >>> SimpleAuthenticateAPI.set_redis_session(Redis("redis", 6379, 0))
         >>> SimpleAuthenticateAPI.set_user_model(AuthenticatedUser)
         >>> app.include_router(SimpleAuthenticateAPI.get_router())
-    '''    
+    '''
     SECRET_KEY: str = ''
-    JWT_SIGNING_ALGORITHM: str = "HS256"
+    JWT_SIGNING_ALGORITHM: str = 'HS256'
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 1440
-    
-    _database_sessionmaker: Type[sessionmaker] | None = None 
-    _redis_session: Type[Redis] | None = None
+
+    _database_sessionmaker: type[sessionmaker] | None = None
+    _redis_session: type[Redis] | None = None
     _user_model: object | None = None
-    
+
     @staticmethod
     def get_router() -> InferringRouter:
         '''Provides the API router
 
         Returns:
             InferringRouter: FastAPI Router
-        '''            
+        '''
         return _api_router
-    
+
     @classmethod
-    def set_database_sessionmaker(cls,database_sessionmaker) -> None:
+    def set_database_sessionmaker(cls, database_sessionmaker) -> None:
         cls._database_sessionmaker = database_sessionmaker
-    
+
     @classmethod
     def set_redis_session(cls, redis_session) -> None:
         cls._redis_session = redis_session
-    
+
     @classmethod
-    def set_user_model(cls,user_model) -> None:
+    def set_user_model(cls, user_model) -> None:
         if set(dir(AuthenticatedUser)) <= set(dir(user_model)):
             cls._user_model = user_model
         else:
             raise RequiredColumnsNotDefined
-    
+
     @classmethod
-    def set_token_parameters(cls, secret_key: str, jwt_signing_algorithm: str = "HS256", access_token_expire_minutes: int = 60, refresh_token_expire_minutes: int = 1440) -> None:
+    def set_token_parameters(cls, secret_key: str, jwt_signing_algorithm: str = 'HS256', access_token_expire_minutes: int = 60, refresh_token_expire_minutes: int = 1440) -> None:
         '''Sets JWT signing parameters and the period during which the token can be used.
 
         Args:
@@ -113,113 +123,123 @@ class SimpleAuthenticateAPI(object):
         cls.JWT_SIGNING_ALGORITHM = jwt_signing_algorithm
         cls.ACCESS_TOKEN_EXPIRE_MINUTES = access_token_expire_minutes
         cls.REFRESH_TOKEN_EXPIRE_MINUTES = refresh_token_expire_minutes
-    
+
     @classmethod
     def __generate_access_token(cls, ulid: str) -> tuple[str, str]:
         claims = {
-            "sub": ulid,
-            "exp": datetime.utcnow() + timedelta(minutes=cls.ACCESS_TOKEN_EXPIRE_MINUTES),
-            "jti": ulid + ":" + uuid.uuid4().hex,
-            "grant": "access"
+            'sub': ulid,
+            'exp': datetime.utcnow() + timedelta(minutes=cls.ACCESS_TOKEN_EXPIRE_MINUTES),
+            'jti': ulid + ':' + uuid.uuid4().hex,
+            'grant': 'access',
         }
-        
-        encoded_jwt = jwt.encode(claims, cls.SECRET_KEY, algorithm=cls.JWT_SIGNING_ALGORITHM)
-        
-        return encoded_jwt, claims["jti"]
+
+        encoded_jwt = jwt.encode(
+            claims, cls.SECRET_KEY, algorithm=cls.JWT_SIGNING_ALGORITHM,
+        )
+
+        return encoded_jwt, claims['jti']
 
     @classmethod
     def __generate_refresh_token(cls, ulid: str) -> tuple[str, str]:
         claims = {
-            "sub": ulid,
-            "exp": datetime.utcnow() + timedelta(minutes=cls.REFRESH_TOKEN_EXPIRE_MINUTES),
-            "jti": ulid + ":" + uuid.uuid4().hex,
-            "grant": "refresh"
+            'sub': ulid,
+            'exp': datetime.utcnow() + timedelta(minutes=cls.REFRESH_TOKEN_EXPIRE_MINUTES),
+            'jti': ulid + ':' + uuid.uuid4().hex,
+            'grant': 'refresh',
         }
-        
-        encoded_jwt = jwt.encode(claims, cls.SECRET_KEY, algorithm=cls.JWT_SIGNING_ALGORITHM)
-        
-        return encoded_jwt, claims["jti"]
+
+        encoded_jwt = jwt.encode(
+            claims, cls.SECRET_KEY, algorithm=cls.JWT_SIGNING_ALGORITHM,
+        )
+
+        return encoded_jwt, claims['jti']
 
     @classmethod
     def __register_jtis_of_authentication_token_to_redis(cls, ulid: str, access_token_jti: str, refresh_token_jti: str) -> None:
         if cls._redis_session == None:
             raise RedisSessionNotSet
-        
-        cls._redis_session.set(ulid + ":access_token", access_token_jti)
-        cls._redis_session.set(ulid + ":refresh_token",refresh_token_jti)
+
+        cls._redis_session.set(ulid + ':access_token', access_token_jti)
+        cls._redis_session.set(ulid + ':refresh_token', refresh_token_jti)
 
     @classmethod
     def __generate_authentication_tokens(cls, ulid: str) -> dict:
         """Generates authentication tokens and registers jtis of authentication tokens to redis."""
         access_token, access_token_jti = cls.__generate_access_token(str(ulid))
-        refresh_token, refresh_token_jti = cls.__generate_refresh_token(str(ulid))
-        cls.__register_jtis_of_authentication_token_to_redis(str(ulid), access_token_jti, refresh_token_jti)
-        
-        return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+        refresh_token, refresh_token_jti = cls.__generate_refresh_token(
+            str(ulid),
+        )
+        cls.__register_jtis_of_authentication_token_to_redis(
+            str(ulid), access_token_jti, refresh_token_jti,
+        )
+
+        return {'access_token': access_token, 'refresh_token': refresh_token, 'token_type': 'bearer'}
 
     @staticmethod
     def __http_exception_callback_when_username_or_password_is_incorrect() -> HTTPException:
         """Callback when username or password is incorrect."""
         return HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authorization":"Bearer"}        
+            detail='Incorrect username or password',
+            headers={'WWW-Authorization': 'Bearer'},
         )
-    
+
     @staticmethod
     def __http_exception_callback_when_authentication_token_is_invalid() -> HTTPException:
         """Callback when authentication token is invalid."""
         return HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication token",
-            headers={"WWW-Authorization":"Bearer"}        
+            detail='Invalid authentication token',
+            headers={'WWW-Authorization': 'Bearer'},
         )
-        
+
     @classmethod
     def __fetch_user_record(cls, username: str, password: str) -> object:
         """Fetches the user record for the given username and password.
-        
+
         Raises:
             DatabaseSessionMakerNotSet: Occurred when database_sessionmaker is not set
             HTTPException: If the password is incorrect.
         """
         if cls._database_sessionmaker is None:
             raise DatabaseSessionMakerNotSet
-                
+
         db_session = cls._database_sessionmaker()
         try:
-            user = db_session.query(cls._user_model).filter(cls._user_model.name == username).one()
+            user = db_session.query(cls._user_model).filter(
+                cls._user_model.name == username,
+            ).one()
         except NoResultFound:
             raise cls.__http_exception_callback_when_username_or_password_is_incorrect()
         finally:
-            db_session.close()        
+            db_session.close()
 
-        if bcrypt.verify(password, user.bcrypt_hash) == False:        
+        if bcrypt.verify(password, user.bcrypt_hash) == False:
             raise cls.__http_exception_callback_when_username_or_password_is_incorrect()
-        
+
         return user
 
-    @_api_router.post("/authenticate")
+    @_api_router.post('/authenticate')
     async def __fetch_authenticate_tokens(self, form_data: OAuth2PasswordRequestForm = Depends()) -> dict:
         """Generates authentication tokens for the given username and password.
-        
+
         Returns:
             dict: Authentication tokens.
 
-        Raises: 
+        Raises:
             HTTPException: If username or password is incorrect.
         """
-        
+
         cls = self.__class__
-        
+
         user = cls.__fetch_user_record(form_data.username, form_data.password)
-            
+
         return cls.__generate_authentication_tokens(str(user.ulid))
 
-    @_api_router.post("/refresh")
-    async def __refresh_authenticate_tokens(self, refresh_token: str = Depends(OAuth2PasswordBearer(tokenUrl="authenticate"))) -> dict:
+    @_api_router.post('/refresh')
+    async def __refresh_authenticate_tokens(self, refresh_token: str = Depends(OAuth2PasswordBearer(tokenUrl='authenticate'))) -> dict:
         """Refresh authentication tokens.
-        
+
         Returns:
             dict: Authentication tokens.
 
@@ -230,18 +250,21 @@ class SimpleAuthenticateAPI(object):
 
         cls = self.__class__
 
-        claims = jwt.decode(refresh_token, cls.SECRET_KEY, algorithms=cls.JWT_SIGNING_ALGORITHM)        
-        if claims["grant"] != "refresh":
+        claims = jwt.decode(
+            refresh_token, cls.SECRET_KEY,
+            algorithms=cls.JWT_SIGNING_ALGORITHM,
+        )
+        if claims['grant'] != 'refresh':
             raise cls.__http_exception_callback_when_authentication_token_is_invalid()
-        
-        ulid = claims["sub"]
-        if redis_session.get(ulid + ":refresh_token") is None:
+
+        ulid = claims['sub']
+        if redis_session.get(ulid + ':refresh_token') is None:
             raise cls.__http_exception_callback_when_authentication_token_is_invalid()
-        
+
         return cls.__generate_authentication_tokens(ulid)
 
-    @_api_router.post("/logout")
-    async def __delete_authenticate_token_jtis_from_redis(self, access_token: str = Depends(OAuth2PasswordBearer(tokenUrl="authenticate"))) -> dict:
+    @_api_router.post('/logout')
+    async def __delete_authenticate_token_jtis_from_redis(self, access_token: str = Depends(OAuth2PasswordBearer(tokenUrl='authenticate'))) -> dict:
         '''Deletes the authentication token's jtis from the redis database.
 
         Args:
@@ -249,22 +272,25 @@ class SimpleAuthenticateAPI(object):
 
         Returns:
             dict: API response.
-            
-        Raises: 
+
+        Raises:
             HTTPException: The authentication token is invalid.
             RedisSessionNotSet: Occured when redis session is not set.
-        '''        
+        '''
         cls = self.__class__
-        
-        claims = jwt.decode(access_token, cls.SECRET_KEY, algorithms=cls.JWT_SIGNING_ALGORITHM)
-        
-        if claims["grant"] != "access":
+
+        claims = jwt.decode(
+            access_token, cls.SECRET_KEY,
+            algorithms=cls.JWT_SIGNING_ALGORITHM,
+        )
+
+        if claims['grant'] != 'access':
             raise cls.__http_exception_callback_when_authentication_token_is_invalid()
-            
-        ulid = claims["sub"]
+
+        ulid = claims['sub']
         if cls._redis_session == None:
             raise RedisSessionNotSet
-        cls._redis_session.delete(ulid + ":access_token")
-        cls._redis_session.delete(ulid + ":refresh_token")
-        
+        cls._redis_session.delete(ulid + ':access_token')
+        cls._redis_session.delete(ulid + ':refresh_token')
+
         return {}

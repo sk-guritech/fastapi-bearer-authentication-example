@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 from fastapi import FastAPI
-from src.router.authenticate_api import SimpleAuthenticateAPI
+from src import redis_session
+from src import SECRET_KEY
+from src import SessionClass
 from src.model.user import User
-from src import SessionClass, redis_session, SECRET_KEY
+from src.router.authenticate_api import SimpleAuthenticateAPI
 
 
 app = FastAPI()
