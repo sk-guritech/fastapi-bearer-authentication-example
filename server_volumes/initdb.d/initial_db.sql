@@ -4,7 +4,7 @@ DROP TABLE IF EXISTS users;
 
 CREATE TABLE users (
     ulid VARCHAR(26) PRIMARY KEY,
-    password_hash VARCHAR(60) NOT NULL,
+    bcrypt_hash VARCHAR(60) NOT NULL,
     name VARCHAR(255) NOT NULL,
     email_address VARCHAR(255) NOT NULL
 );
