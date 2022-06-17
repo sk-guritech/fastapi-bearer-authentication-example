@@ -38,7 +38,7 @@ class RequiredColumnsNotDefined(Exception):
 
 
 class AuthenticatedUser:
-    """Basic user model for using SimpleAuthenticateAPI.
+    """Basic user model for using FastAPISimpleAuthentication.
 
     Attributes:
         ulid (Column): The unique identifier of the user.
@@ -52,7 +52,7 @@ class AuthenticatedUser:
 
 
 @cbv(_api_router)
-class SimpleAuthenticateAPI:
+class FastAPISimpleAuthentication:
     '''Provides APIs for authentication.
 
     Attributes:
@@ -74,16 +74,16 @@ class SimpleAuthenticateAPI:
         >>> from fastapi import FastAPI
         >>> from sqlalchemy.orm import sessionmaker
         >>> from sqlalchemy import create_engine
-        >>> from authenticate_api import SimpleAuthenticateAPI, AuthenticatedUser
+        >>> from authenticate_api import FastAPISimpleAuthentication, AuthenticatedUser
         >>> SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
         >>> engine = create_engine("mysql://user:password@db/database")
         >>> SessionClass = sessionmaker(engine)
         >>> app = FastAPI()
-        >>> SimpleAuthenticateAPI.set_token_parameters(SECRET_KEY)
-        >>> SimpleAuthenticateAPI.set_database_sessionmaker(SessionClass)
-        >>> SimpleAuthenticateAPI.set_redis_session(Redis("redis", 6379, 0))
-        >>> SimpleAuthenticateAPI.set_user_model(AuthenticatedUser)
-        >>> app.include_router(SimpleAuthenticateAPI.get_router())
+        >>> FastAPISimpleAuthentication.set_token_parameters(SECRET_KEY)
+        >>> FastAPISimpleAuthentication.set_database_sessionmaker(SessionClass)
+        >>> FastAPISimpleAuthentication.set_redis_session(Redis("redis", 6379, 0))
+        >>> FastAPISimpleAuthentication.set_user_model(AuthenticatedUser)
+        >>> app.include_router(FastAPISimpleAuthentication.get_router())
     '''
     SECRET_KEY: str = ''
     JWT_SIGNING_ALGORITHM: str = 'HS256'
