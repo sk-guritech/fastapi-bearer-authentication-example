@@ -38,7 +38,14 @@ class RequiredColumnsNotDefined(Exception):
 
 
 class AuthenticatedUser:
-    """Basic user model for using SimpleAuthenticateAPI."""
+    """Basic user model for using SimpleAuthenticateAPI.
+
+    Attributes:
+        ulid (Column): The unique identifier of the user.
+        bcrypt_hash (Column): The password hash of the user hashed by bcrypt.
+        name (Column): The name of the user
+    """
+
     ulid = Column(String(26), primary_key=True)
     bcrypt_hash = Column(String(60), nullable=False)
     name = Column(String(255), nullable=False)
@@ -125,7 +132,7 @@ class SimpleAuthenticateAPI:
         cls, secret_key: str, jwt_signing_algorithm: str = 'HS256',
         access_token_expire_minutes: int = 60, refresh_token_expire_minutes: int = 1440,
     ) -> None:
-        '''Sets JWT signing parameters and the period during which the token can be used.
+        '''Sets signing parameters for JWT and the period during which the token can be used.
 
         Args:
             secret_key (str): The secret key used signing for JWT.
