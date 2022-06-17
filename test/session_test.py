@@ -9,11 +9,15 @@ urllib3.disable_warnings(InsecureRequestWarning)
 
 def call_authentication(username: str, password: str) -> tuple[str, str]:
     print('=' * 20 + '  Authenticate  ' + '=' * 20)
-    json_response = requests.post(
+    response = requests.post(
         'https://127.0.0.1/authenticate', data={
             'username': username, 'password': password,
         }, verify=False,
-    ).json()
+    )
+
+    print(response)
+
+    json_response = response.json()
     access_token = json_response['access_token']
     refresh_token = json_response['refresh_token']
 
@@ -36,8 +40,8 @@ def call_refresh(refresh_token: str) -> tuple[str, str] | None:
         json_response = response.json()
         access_token = json_response['access_token']
         refresh_token = json_response['refresh_token']
-    except:
-        return
+    except KeyError:
+        return None
 
     print(f'access_token  : {access_token}')
     print(f'refresh_token : {refresh_token}')
@@ -60,12 +64,12 @@ username = 'johndoe'
 password = 'secret'
 
 access_token, refresh_token = call_authentication(username, password)
-access_token, refresh_token = call_refresh(refresh_token)
+access_token, refresh_token = call_refresh(refresh_token)  # type: ignore
 print(call_logout(access_token))
 access_token, refresh_token = call_authentication(username, password)
 access_token, refresh_token = call_authentication(username, password)
-access_token, refresh_token = call_refresh(refresh_token)
-access_token, refresh_token = call_refresh(refresh_token)
+access_token, refresh_token = call_refresh(refresh_token)  # type: ignore
+access_token, refresh_token = call_refresh(refresh_token)  # type: ignore
 print(call_logout(access_token))
 call_refresh(refresh_token)
 print(call_logout(access_token))
