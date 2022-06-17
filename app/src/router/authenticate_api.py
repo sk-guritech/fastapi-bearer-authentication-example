@@ -26,7 +26,7 @@ _api_router = InferringRouter()
 
 
 class DatabaseSessionMakerNotSet(Exception):
-    """Occured when session_maker is not set"""
+    """Occured when session_maker is not set."""
 
 
 class RedisSessionNotSet(Exception):
@@ -67,6 +67,9 @@ class FastAPISimpleAuthentication:
 
     Raises:
         HTTPException: Occurred when authentication fails.
+        DatabaseSessionMakerNotSet: Occured when session_maker is not set.
+        RedisSessionNotSet: Occured when redis_session is not set.
+        RequiredColumnsNotDefined: Occured when required columns are not defined.
 
     Examples:
         Add APIs for authentication to FastAPI
