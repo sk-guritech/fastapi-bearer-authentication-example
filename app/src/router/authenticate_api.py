@@ -292,6 +292,10 @@ class SimpleAuthenticateAPI:
             raise cls.__http_exception_callback_when_authentication_token_is_invalid()
 
         ulid = claims['sub']
+
+        if cls._redis_session is None:
+            raise RedisSessionNotSet
+
         if redis_session.get(ulid + ':refresh_token') is None:
             raise cls.__http_exception_callback_when_authentication_token_is_invalid()
 
@@ -325,8 +329,13 @@ class SimpleAuthenticateAPI:
             raise cls.__http_exception_callback_when_authentication_token_is_invalid()
 
         ulid = claims['sub']
+
         if cls._redis_session is None:
             raise RedisSessionNotSet
+
+        if redis_session.get(ulid + ':refresh_token') is None:
+            raise cls.__http_exception_callback_when_authentication_token_is_invalid()
+
         cls._redis_session.delete(ulid + ':access_token')
         cls._redis_session.delete(ulid + ':refresh_token')
 
