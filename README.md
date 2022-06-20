@@ -1,5 +1,5 @@
 # fastapi-bearer-authentication-example
-This is an Example that adds session functionality to the sample code described in the FastAPI tutorial "OAuth2 with Password (and hashing), Bearer with JWT tokens".
+This is an Example that adds session functionality to the sample code described in the FastAPI tutorial ["OAuth2 with Password (and hashing), Bearer with JWT tokens"](https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/#update-the-dependencies).
 
 ## Requirements
 ```
