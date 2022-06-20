@@ -29,9 +29,9 @@ This example consists of the Docker containers in the table below.
 
 ```mermaid
 flowchart LR
-    client <--> |HTTP Request| web <--> |Unix Sokcet| app
-    app <--> |SELECT| db
-    app <--> |GET/SET/DELETE| redis
+    client --> |HTTP Request| web --> |Unix Sokcet| app
+    app --> |SELECT| db
+    app --> |GET/SET/DELETE| redis
 ```
 
 ## APIs
