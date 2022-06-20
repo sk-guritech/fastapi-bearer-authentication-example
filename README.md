@@ -67,8 +67,9 @@ flowchart LR
     ```
 
 ## Author
-- github: [@GuriTech](https://github.com/sk-guritech/)
-- twitter: [@GuriTech](https://twitter.com/GuriTech)
+- @sk-guritech
+    - [https://github.com/sk-guritech/](https://github.com/sk-guritech/)
+    - [https://twitter.com/GuriTech](https://twitter.com/GuriTech)
 
 ## License
 Copyright (c) 2022~ @sk-guritech
